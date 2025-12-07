@@ -28,5 +28,11 @@ go.work.sum
 .env
 
 # Editor/IDE
-# .idea/
-# .vscode/
+.idea/
+.vscode/
+
+logs/
+
+config/config.yaml
+config/license.lic
+pkg/utils/public.pem

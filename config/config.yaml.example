@@ -1,0 +1,15 @@
+database:
+  host: localhost
+  user: xxxxxx
+  dbname: xxxxxx
+  pwd: xxxxxx
+  port: 3306
+server:
+  port: 5012
+redis:
+  host: localhost
+  port: 6379
+  password: xxxxxx
+  db: 0
+  pool_size: 20
+  min_idle_conns: 5
