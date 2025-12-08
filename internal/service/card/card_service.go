@@ -2,6 +2,7 @@ package card
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"log"
@@ -74,7 +75,7 @@ func (s *cardService) ProcessConsumTransaction(req model.ConsumTransaction, devi
 		return nil, fmt.Errorf("查询用户信息失败: %v", err)
 	}
 
-	log.Printf("TAG: 获取到用户信息 user_id=%d,名称=%s,卡号=%s", user.Id, user.NickName, user.CardNo)
+	log.Printf("TAG: 获取到用户信息 user_id=%d,名称=%s,卡号=%s", user.UserId, user.NickName, user.CardNo)
 
 	now := time.Now()
 	dateStr := now.Format("20060102")
@@ -100,7 +101,7 @@ func (s *cardService) ProcessConsumTransaction(req model.ConsumTransaction, devi
 
 		// 创建临时订单
 		order := &model.OrderRecord{
-			UserId:     user.Id,
+			UserId:     user.UserId,
 			MealId:     mealID,
 			Status:     "临时用餐",
 			MealType:   mealType,
@@ -110,7 +111,7 @@ func (s *cardService) ProcessConsumTransaction(req model.ConsumTransaction, devi
 		}
 
 		// 开始事务
-		if err := s.createTempOrderAndDecreaseCount(order, user.Id, user.Count); err != nil {
+		if err := s.createTempOrderAndDecreaseCount(order, user.UserId, user.Count); err != nil {
 			return nil, err
 		}
 
@@ -141,13 +142,23 @@ func (s *cardService) ProcessConsumTransaction(req model.ConsumTransaction, devi
 	}
 
 	// 查询订单记录
-	order, err := s.cardRepo.FindOrderRecord(user.Id, mealType, dateStr, weekday)
+	order, err := s.cardRepo.FindOrderRecord(user.UserId, mealType, dateStr, weekday)
 	if err != nil {
-		log.Printf("TAG: 查询订单失败: %v", err)
-		return nil, fmt.Errorf("查询订单失败: %v", err)
+		// 区分"查不到记录"和"真正的查询失败"
+		if !errors.Is(err, sql.ErrNoRows) {
+			log.Printf("TAG: 查询订单失败: %v", err)
+			return nil, fmt.Errorf("查询订单失败: %v", err)
+		}
+		// 如果是查不到记录，设置一个空订单对象
+		order = &model.OrderRecord{
+			Id:     0,
+			Status:  "",
+			MealId:  0,
+		}
+		log.Printf("TAG: 查询订单结果: 未找到记录，将创建临时订单")
+	} else {
+		log.Printf("TAG: 查询订单结果: %+v", order)
 	}
-
-	log.Printf("TAG: 查询订单结果: %+v", order)
 
 	// 检查是否需要创建临时订单
 	isUnordered := order.Id == 0 || order.Status == "" || order.MealId == 0
@@ -160,7 +171,7 @@ func (s *cardService) ProcessConsumTransaction(req model.ConsumTransaction, devi
 		}
 
 		tempOrder := &model.OrderRecord{
-			UserId:     user.Id,
+			UserId:     user.UserId,
 			MealId:     mealID,
 			Status:     "临时用餐",
 			MealType:   mealType,
@@ -169,7 +180,7 @@ func (s *cardService) ProcessConsumTransaction(req model.ConsumTransaction, devi
 			Weekday:    weekday,
 		}
 
-		if err := s.createTempOrderAndDecreaseCount(tempOrder, user.Id, user.Count); err != nil {
+		if err := s.createTempOrderAndDecreaseCount(tempOrder, user.UserId, user.Count); err != nil {
 			return nil, err
 		}
 
@@ -228,7 +239,7 @@ func (s *cardService) ProcessConsumTransaction(req model.ConsumTransaction, devi
 	}
 
 	// 更新订单状态并减少用户次数
-	if err := s.updateOrderStatusAndDecreaseCount(order.Id, "已领取", user.Id, user.Count); err != nil {
+	if err := s.updateOrderStatusAndDecreaseCount(order.Id, "已领取", user.UserId, user.Count); err != nil {
 		return nil, err
 	}
 

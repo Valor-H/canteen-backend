@@ -6,6 +6,8 @@ import (
 
 	"canteen/internal/controller/card"
 	"canteen/internal/controller/tempDirect"
+	"canteen/internal/controller/user"
+	"canteen/internal/controller/order_record_detail"
 	"canteen/internal/infrastructure/cache"
 	"canteen/internal/infrastructure/database"
 	"canteen/pkg/utils"
@@ -32,6 +34,8 @@ func (app *Application) Initialize() error {
 	// 注入数据库连接到控制器
 	card.SetDB(app.db)
 	tempDirect.SetDB(app.db)
+	user.SetDB(app.db)
+	order_record_detail.SetDB(app.db)
 
 	// 更新每日餐食缓存
 	log.Println("Updating daily meal cache on startup...")

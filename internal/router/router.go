@@ -3,8 +3,10 @@ package router
 import (
 	"canteen/internal/controller/card"
 	"canteen/internal/controller/health"
+	"canteen/internal/controller/order_record_detail"
 	"canteen/internal/controller/tempDirect"
 	"canteen/internal/controller/uploadFile"
+	"canteen/internal/controller/user"
 	"canteen/internal/infrastructure/logging"
 	"net/http"
 	"strings"
@@ -20,6 +22,8 @@ func BlockInvalidRequests() gin.HandlerFunc {
 		"/api/v1/",
 		"/hxz/v1/",
 		"/temp/v1/",
+		"/user/v1/",
+		"/order/v1/",
 	}
 	blockedPaths := map[string]bool{
 		"/hxz/v1/test": true,
@@ -31,7 +35,7 @@ func BlockInvalidRequests() gin.HandlerFunc {
 		ua := c.Request.UserAgent()
 		method := c.Request.Method
 		timestamp := time.Now().Format("2006-01-02 15:04:05")
-		
+
 		illegalLogger := logging.GetIllegalLogger()
 
 		// 日志内容封装
@@ -83,6 +87,24 @@ func RegisterRoutes(router *gin.Engine) {
 		commonGroup.GET("/DishDetail/:id", tempDirect.DishDetail)
 	}
 
+	userApi := router.Group("/user")
+	userGroup := userApi.Group("/v1")
+	{
+		userGroup.GET("/getUser/:user_id", user.GetUserHandler)
+		userGroup.GET("/getUserByNickName", user.GetUserByNickNameHandler)
+	}
+
+	orderApi := router.Group("/order")
+	orderGroup := orderApi.Group("/v1")
+	{
+		orderGroup.GET("/getCMealSelectionStats", order_record_detail.GetCMealSelectionStatsHandler)
+		orderGroup.GET("/getAllMealSelectionStats", order_record_detail.GetAllMealSelectionStatsHandler)
+		orderGroup.GET("/getBasicDishStats", order_record_detail.GetBasicDishStatsHandler)
+		orderGroup.GET("/getDishAppearanceStats", order_record_detail.GetDishAppearanceStatsHandler)
+		orderGroup.GET("/getUserDishOrderStats", order_record_detail.GetUserDishOrderStatsHandler)
+		orderGroup.GET("/getDishStatsComparison", order_record_detail.GetDishStatsComparisonHandler)
+	}
+
 	cardApi := router.Group("/hxz")
 	cardGroup := cardApi.Group("/v1")
 	{
@@ -108,7 +130,7 @@ func Config() *gin.Engine {
 
 	// 恢复 panic 的中间件
 	router.Use(gin.Recovery())
-	
+
 	// CORS 配置
 	router.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"*"},                                       // 允许所有域名跨域访问，如果需要可以改为特定域名
@@ -118,12 +140,12 @@ func Config() *gin.Engine {
 		AllowCredentials: true,                                                // 是否允许携带凭证（如 Cookie）
 		MaxAge:           12 * time.Hour,                                      // 设置缓存时间
 	}))
-	
+
 	// 拦截非法请求
 	router.Use(BlockInvalidRequests())
-	
+
 	// 注册路由
 	RegisterRoutes(router)
-	
+
 	return router
 }

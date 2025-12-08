@@ -93,3 +93,6 @@ GOOS=windows GOARCH=amd64 go build -o canteen-server-windows-amd64.exe cmd/serve
 
 ## 许可证
 本项目采用许可证授权，使用前请确保许可证有效。
+
+
+

@@ -25,9 +25,9 @@ func NewCardRepository(db *sql.DB) CardRepository {
 func (r *cardRepository) FindUserByCardNo(cardNo string) (*model.UserVo, error) {
 	var user model.UserVo
 	err := r.db.QueryRow(
-		"SELECT user_id, dept_id, nick_name, count, card_no FROM sys_user WHERE card_no = ?", 
+		"SELECT user_id, dept_id, nick_name, count, card_no FROM sys_user WHERE card_no = ?",
 		cardNo,
-	).Scan(&user.Id, &user.DeptId, &user.NickName, &user.Count, &user.CardNo)
+	).Scan(&user.UserId, &user.DeptId, &user.NickName, &user.Count, &user.CardNo)
 	return &user, err
 }
 
@@ -46,13 +46,13 @@ func (r *cardRepository) CreateOrderRecord(order *model.OrderRecord) error {
 		INSERT INTO order_record 
 		(user_id, week_number, order_date, weekday, meal_type, setmeal_id, quantity, status, create_time, update_time)
 		VALUES (?, ?, ?, ?, ?, ?, 1, ?, NOW(), NOW())
-	`, 
-		order.UserId, 
-		order.WeekNumber, 
-		order.OrderDate, 
-		order.Weekday, 
-		order.MealType, 
-		order.MealId, 
+	`,
+		order.UserId,
+		order.WeekNumber,
+		order.OrderDate,
+		order.Weekday,
+		order.MealType,
+		order.MealId,
 		order.Status,
 	)
 	return err

@@ -12,9 +12,9 @@ type User struct {
 }
 
 type UserVo struct {
-	Id       int
-	NickName string
-	Count    int
-	DeptId   int
-	CardNo   string
+	UserId   int    `json:"userId"`
+	NickName string `json:"nickName"`
+	Count    int    `json:"count"`
+	DeptId   int    `json:"deptId"`
+	CardNo   string `json:"cardNo"`
 }
